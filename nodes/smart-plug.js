@@ -62,8 +62,8 @@ module.exports = function(RED) {
                     return;
                 }
                 if (node.isClientConnected()) {
-                    if (node.checkAction('getInfoEvents')) node.sendDeviceSysInfo()
-                    if (node.checkAction('getMeterEvents')) node.sendDeviceMeterInfo()
+                    if (node.checkAction('getInfoEvents')) node.sendDeviceSysInfo(true)
+                    if (node.checkAction('getMeterEvents')) node.sendDeviceMeterInfo(true)
                 } else {
                     node.status({fill:'red',shape:'ring',text:'Not reachable'});
                     node.sendDeviceOnlineEvent(false);
@@ -178,7 +178,7 @@ module.exports = function(RED) {
             context.get('action') !== null &&
             context.get('action').includes(action);
         };
-        node.sendDeviceSysInfo = function() {
+        node.sendDeviceSysInfo = function(as_event = false) {
             node.deviceInstance.getSysInfo()
             .then(info => {
                 if (info.relay_state === 1) {
@@ -191,6 +191,9 @@ module.exports = function(RED) {
                 let msg = {};
                 msg.payload = info;
                 msg.payload.timestamp = moment().format();
+                if (as_event) {
+                    msg.payload.eventType = "InfoEvent";
+                }
                 node.send(msg);
             }).catch(error => {return node.handleConnectionError(error)});
         };
@@ -212,7 +215,7 @@ module.exports = function(RED) {
                 node.send(msg);
             }).catch(error => {return node.handleConnectionError(error)});
         };
-        node.sendDeviceMeterInfo = function() {
+        node.sendDeviceMeterInfo = function(as_event = false) {
             node.deviceInstance.emeter.getRealtime()
             .then(info => {
                 const current = numeral(info.current_ma/1000.0).format('0.[000]');
@@ -226,6 +229,9 @@ module.exports = function(RED) {
                 const msg = {};
                 msg.payload = info;
                 msg.payload.timestamp = moment().format();
+                if (as_event) {
+                    msg.payload.eventType = "MeterEvent";
+                }
                 node.send(msg);
             }).catch(error => {return node.handleConnectionError(error)});
         };
@@ -235,6 +241,7 @@ module.exports = function(RED) {
                 msg.payload = {};
                 msg.payload.powerOn = powerOn;
                 msg.payload.timestamp = moment().format();
+                msg.payload.eventType = "PowerUpdateEvent";
                 node.send(msg);
             }
         };
@@ -244,6 +251,7 @@ module.exports = function(RED) {
                 msg.payload = {};
                 msg.payload.inUse = inUse;
                 msg.payload.timestamp = moment().format();
+                msg.payload.eventType = "InUseEvent";
                 node.send(msg);
             }
         };
@@ -253,6 +261,7 @@ module.exports = function(RED) {
                 msg.payload = {};
                 msg.payload.online = online;
                 msg.payload.timestamp = moment().format();
+                msg.payload.eventType = "OnlineEvent";
                 node.send(msg);
             }
         };
