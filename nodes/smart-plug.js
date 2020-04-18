@@ -88,13 +88,11 @@ module.exports = function(RED) {
                         if (EVENT_ACTIONS.indexOf(action) !== -1) enabledActions.push(action);
                     });
                     if (enabledActions.length > 0) {
-                        RED.log.info("Configured to trigger actions " +  enabledActions.join(", "));
                         context.set('action', enabledActions.join('|'));
                     } else {
-                        RED.log.info("Configured to trigger no actions");
                         context.set('action', '');
                     }
-                        }
+                }
             }
 
             // Process other input only if connected to client
