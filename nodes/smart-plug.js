@@ -79,9 +79,26 @@ module.exports = function(RED) {
 
         //INPUTS
         node.on('input', function(msg) {
-            if (!node.isClientConnected()) return node.handleConnectionError('not reachable');
-            const EVENT_ACTIONS = ['getMeterEvents','getInfoEvents','getPowerUpdateEvents','getInUseEvents','getOnlineEvents'];
+            // Process event configuration even before we are connected to client
             let enabledActions = [];
+            const EVENT_ACTIONS = ['getMeterEvents','getInfoEvents','getPowerUpdateEvents','getInUseEvents','getOnlineEvents'];
+            if (isPlainObject(msg.payload)) {
+                if (msg.payload.hasOwnProperty('events')) {
+                    msg.payload.events.forEach(action => {
+                        if (EVENT_ACTIONS.indexOf(action) !== -1) enabledActions.push(action);
+                    });
+                    if (enabledActions.length > 0) {
+                        RED.log.info("Configured to trigger actions " +  enabledActions.join(", "));
+                        context.set('action', enabledActions.join('|'));
+                    } else {
+                        RED.log.info("Configured to trigger no actions");
+                        context.set('action', '');
+                    }
+                        }
+            }
+
+            // Process other input only if connected to client
+            if (!node.isClientConnected()) return node.handleConnectionError('not reachable');
 
             if (isPlainObject(msg.payload)) {
                 let promises = [];
@@ -106,17 +123,6 @@ module.exports = function(RED) {
                     .then(() => {node.sendDeviceSysInfo()})
                     .catch(error => {return node.handleConnectionError(error)});
 
-                if (msg.payload.hasOwnProperty('events')) {
-                    msg.payload.events.forEach(action => {
-                        if (EVENT_ACTIONS.indexOf(action) !== -1) enabledActions.push(action);
-                    });
-
-                    if (enabledActions.length > 0) {
-                        context.set('action', enabledActions.join('|'));
-                    } else {
-                        context.set('action', '');
-                    }
-                }
             } else {
                 // test to see if user send a string "true" or "false" or "on" or "off" and change it to boolean true/false
                 if (typeof msg.payload === 'string' || msg.payload instanceof String) {
