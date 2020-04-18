@@ -32,6 +32,7 @@ module.exports = function(RED) {
                 node.deviceConnected = true;
                 node.deviceInstance = device;
                 node.status({fill:'yellow',shape:'dot',text:'Connected'});
+                node.sendDeviceOnlineEvent(true);
                 device.on('power-on', () => {node.sendPowerUpdateEvent(true)});
                 device.on('power-off', () => {node.sendPowerUpdateEvent(false)});
                 device.on('in-use', () => {node.sendInUseEvent(true)});
@@ -65,6 +66,7 @@ module.exports = function(RED) {
                     if (node.checkAction('getMeterEvents')) node.sendDeviceMeterInfo()
                 } else {
                     node.status({fill:'red',shape:'ring',text:'Not reachable'});
+                    node.sendDeviceOnlineEvent(false);
                     node.stopPolling();
                     return false;
                 }

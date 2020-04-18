@@ -1,6 +1,6 @@
 {
   "name": "node-red-contrib-tplink",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "A collection of Node-RED nodes for TP-Link smart-home devices.",
   "homepage": "https://github.com/caseyjhol/node-red-contrib-tplink",
   "author": "Dragoiu Robert <dragoiu.robert@gmail.com> (https://facebook.com/dopepixels)",
@@ -8,7 +8,8 @@
     "Barney Rubble <felixls.pic@gmail.com> (http://acloudhub.info/resume/)",
     "Raj Amal <raj.amalw@gmail.com> (https://www.learn2crack.com)",
     "juggledad (https://github.com/juggledad)",
-    "Casey Holzer (https://github.com/caseyjhol)"
+    "Casey Holzer (https://github.com/caseyjhol)",
+    "Hans-Christian Ebke (https://github.com/hcebke)"
   ],
   "license": "MIT",
   "repository": {
