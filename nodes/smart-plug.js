@@ -1,6 +1,6 @@
 const isPlainObject = obj => Object.prototype.toString.call(obj) === '[object Object]';
 
-module.exports = function(RED) {
+module.exports = function (RED) {
     'use strict';
     const Client = require('tplink-smarthome-api').Client;
     function SmartPlugNode(config) {
@@ -8,275 +8,275 @@ module.exports = function(RED) {
         this.config = {
             name: config.name,
             device: config.device,
-            interval: config.interval,
-            eventInterval: config.eventInterval
+            interval: parseInt(config.interval),
+            eventInterval: parseInt(config.eventInterval)
         };
         const deviceIP = this.config.device;
         const moment = require('moment');
-        const numeral = require('numeral');
         const context = this.context();
+        context.set('action', []);
         const node = this;
-        node.deviceInstance = null;
+        node.deviceInstance = [];
         node.deviceConnected = false;
-        if (deviceIP === null||deviceIP === '') {
-            node.status({fill:'red',shape:'ring',text:'Not configured'});
+        node.client = null;
+        if (deviceIP === null || deviceIP === '') {
+            node.status({
+                fill: 'red', shape: 'ring', text: 'Not Configured' });
             return false;
-        }
-        node.status({fill:'grey',shape:'dot',text:'Initializing…'});
-
+        };
+        node.status({ fill: 'grey', shape: 'dot', text: 'Initializing…' });
         //STARTING and PARAMETERS
-        node.connectClient = function() {
-            const client = new Client();
-            client.getDevice({host:deviceIP})
-            .then((device) => {
-                node.deviceConnected = true;
-                node.deviceInstance = device;
-                node.status({fill:'yellow',shape:'dot',text:'Connected'});
-                device.on('power-on', () => {node.sendPowerUpdateEvent(true)});
-                device.on('power-off', () => {node.sendPowerUpdateEvent(false)});
-                device.on('in-use', () => {node.sendInUseEvent(true)});
-                device.on('not-in-use', () => {node.sendInUseEvent(false)});
-                device.on('device-online', () => {node.sendDeviceOnlineEvent(true)});
-                device.on('device-offline', () => {node.sendDeviceOnlineEvent(false)});
-                node.startPolling();
-            })
-            .catch(() => {return node.handleConnectionError()});
-        };
-        node.disconnectClient = function() {node.deviceConnected = false};
-        node.isClientConnected = function() {return node.deviceConnected === true};
-        node.startIsAlivePolling = function() {
-            node.pingPolling = setInterval(function() {
-                if (node.isClientConnected()) node.deviceInstance.getInfo().catch(() => {return node.handleConnectionError()});
-                else return node.connectClient()
-            }, parseInt(node.config.interval));
-        };
-        node.stopIsAlivePolling = function() {
-            clearInterval(node.pingPolling);
-            node.pingPolling = null;
-        };
-        node.startPolling = function() {
-            node.eventPolling = setInterval(function() {
-                if (node.deviceInstance === null) {
-                    node.stopPolling();
-                    return;
-                }
-                if (node.isClientConnected()) {
-                    if (node.checkAction('getInfoEvents')) node.sendDeviceSysInfo()
-                    if (node.checkAction('getMeterEvents')) node.sendDeviceMeterInfo()
+        node.connectClient = function () {
+            const client = new Client;
+            node.client = client;
+            (async () => {
+                const device = await client.getDevice({ host: deviceIP });
+                client.on('device-online', () => { node.sendEvent('device-online', deviceIP, 'online') });
+                client.on('device-offline', () => { node.sendEvent('device-offline', deviceIP, 'offline') });
+                if (device.children) {
+                    await Promise.all(
+                        Array.from(device.children.keys(), async childId => {
+                            const childPlug = await client.getDevice({ host: deviceIP, childId });
+                            node.deviceInstance.push(childPlug);
+                            node.monitorEvents(childPlug);
+                        })
+                    );
+                    node.deviceInstance.reverse();
+                    node.deviceInstance.unshift(device);
                 } else {
-                    node.status({fill:'red',shape:'ring',text:'Not reachable'});
-                    node.stopPolling();
-                    return false;
-                }
-            }, parseInt(node.config.eventInterval));
+                    node.monitorEvents(device);
+                    node.deviceInstance.push(device);
+                };
+            })().catch(() => { return node.handleConnectionError() });
+            node.deviceConnected = true;
+            node.status({ fill: 'green', shape: 'dot', text: 'Connected' });
+            client.startDiscovery({ broadcast: deviceIP, discoveryInterval: node.config.interval, discoveryTimeout: 0, offlineTolerance: 1, breakoutChildren: false });
         };
-        node.stopPolling = function () {
-            clearInterval(node.eventPolling);
-            node.eventPolling = null;
+        node.monitorEvents = function (device) {
+            device.on('power-on', () => { node.sendEvent('power-on', device, true) });
+            device.on('power-off', () => { node.sendEvent('power-off', device, false) });
+            device.on('power-update', powerOn => { node.sendEvent('power-update', device, powerOn) });
+            device.on('in-use', () => { node.sendEvent('in-use', device, true) });
+            device.on('not-in-use', () => { node.sendEvent('not-in-use', device, false) });
+            device.on('in-use-update', inUse => { node.sendEvent('in-use-update', device, inUse) });
+            device.on('emeter-realtime-update', emeterRealtime => { node.sendEvent('emeter-realtime-update', device, emeterRealtime) });
+            device.startPolling(node.config.eventInterval);
         };
-
         //INPUTS
-        node.on('input', function(msg) {
-            if (!node.isClientConnected()) return node.handleConnectionError('not reachable');
-            const EVENT_ACTIONS = ['getMeterEvents','getInfoEvents','getPowerUpdateEvents','getInUseEvents','getOnlineEvents'];
-            let enabledActions = [];
-
+        node.on('input', function (msg) {
+            if (!node.deviceConnected) return node.handleConnectionError('Not Reachable');
             if (isPlainObject(msg.payload)) {
-                let promises = [];
-
-                if (msg.payload.hasOwnProperty('state')) {
-                    if (msg.payload.state === 'toggle') {
-                        promises.push(node.deviceInstance.togglePowerState());
-                    } else {
-                        promises.push(node.deviceInstance.setPowerState(msg.payload.state));
-                    }
+                if (msg.payload.hasOwnProperty('brightness') || msg.payload.hasOwnProperty('led')) {
+                    let promises = [];
+                    if (msg.payload.hasOwnProperty('state')) {
+                        let msg_test = msg.payload.state.toUpperCase();
+                        if (msg_test === 'TRUE' || msg_test === 'ON') msg.payload.state = true;
+                        if (msg_test === 'FALSE' || msg_test === 'OFF') msg.payload.state = false;
+                        if (msg.payload.state === 'toggle') {
+                            promises.push(node.deviceInstance[0].togglePowerState());
+                        } else {
+                            promises.push(node.deviceInstance[0].setPowerState(msg.payload.state));
+                        };
+                    };
+                    if (msg.payload.hasOwnProperty('brightness')) {
+                        promises.push(node.deviceInstance[0].dimmer.setBrightness(msg.payload.brightness));
+                    };
+                    if (msg.payload.hasOwnProperty('led')) {
+                        promises.push(node.deviceInstance[0].setLedState(msg.payload.led));
+                    };
+                    Promise.all(promises).catch(error => { return node.handleConnectionError(error) });
+                } else if (msg.payload.hasOwnProperty('plug')) {
+                    node.sendInput(node.deviceInstance[msg.payload.plug], msg.payload.state);
+                } else if (msg.payload.hasOwnProperty('state')) {
+                    node.sendInput(node.deviceInstance[0], msg.payload.state);
                 }
-
-                if (msg.payload.hasOwnProperty('brightness')) {
-                    promises.push(node.deviceInstance.dimmer.setBrightness(msg.payload.brightness));
-                }
-
-                if (msg.payload.hasOwnProperty('led')) {
-                    promises.push(node.deviceInstance.setLedState(msg.payload.led));
-                }
-
-                Promise.all(promises)
-                    .then(() => {node.sendDeviceSysInfo()})
-                    .catch(error => {return node.handleConnectionError(error)});
-
                 if (msg.payload.hasOwnProperty('events')) {
-                    msg.payload.events.forEach(action => {
-                        if (EVENT_ACTIONS.indexOf(action) !== -1) enabledActions.push(action);
+                    msg.payload.events.forEach(event => {
+                        node.sendInput(node.deviceInstance[0], event);
                     });
-
-                    if (enabledActions.length > 0) {
-                        context.set('action', enabledActions.join('|'));
-                    } else {
-                        context.set('action', '');
-                    }
-                }
+                };
+            } else if (typeof msg.payload === 'array' || msg.payload instanceof Array) {
+                msg.payload.forEach(event => {
+                    node.sendInput(node.deviceInstance[0], event);
+                });
             } else {
-                // test to see if user send a string "true" or "false" or "on" or "off" and change it to boolean true/false
-                if (typeof msg.payload === 'string' || msg.payload instanceof String) {
-                    let msg_test = msg.payload.toUpperCase();
-                    if (msg_test === 'TRUE' || msg_test === 'ON') msg.payload = true;
-                    if (msg_test === 'FALSE' || msg_test === 'OFF') msg.payload = false;
-                }
-
-                switch (msg.payload) {
-                    case true:
-                    case false:
-                        node.deviceInstance.setPowerState(msg.payload)
-                            .then(() => {node.sendDeviceSysInfo()})
-                            .catch(error => {return node.handleConnectionError(error)});
-                        break;
-
-                    case 'switch':
-                        node.deviceInstance.togglePowerState();
-                        break;
-
-                    case 'getInfo':
-                        node.sendDeviceSysInfo();
-                        break;
-
-                    case 'getCloudInfo':
-                        node.sendDeviceCloudInfo();
-                        break;
-
-                    case 'getQuickInfo':
-                        node.sendDeviceQuickInfo();
-                        break;
-
-                    case 'getMeterInfo':
-                        node.sendDeviceMeterInfo();
-                        break;
-
-                    case 'clearEvents':
-                        context.set('action', msg.payload);
-                        break;
-
-                    case 'eraseStats':
-                        node.sendEraseStatsResult();
-                        break;
-
-                    default:
-                        const actions = msg.payload.split('|');
-                        actions.forEach(action => {
-                            if (EVENT_ACTIONS.indexOf(action) !== -1) enabledActions.push(action);
-                        });
-                        if (enabledActions.length > 0) context.set('action', enabledActions.join('|'));
-                        else context.set('action', '');
-                }
-            }
+                node.sendInput(node.deviceInstance[0], msg.payload);
+            };
         });
-
+        //PROCESS INPUTS
+        node.sendInput = function (device, input) {
+            const EVENT_ACTIONS = ['getMeterUpdateEvents', 'getPowerEvents', 'getPowerUpdateEvents', 'getInUseEvents', 'getInUseUpdateEvents', 'getOnlineEvents'];
+            let enabledActions = context.get('action');
+            let msg_test = input.toUpperCase();
+            if (msg_test === 'TRUE' || msg_test === 'ON') input = true;
+            if (msg_test === 'FALSE' || msg_test === 'OFF') input = false;
+            switch (input) {
+                case true:
+                case false:
+                    device.setPowerState(input);
+                    break;
+                case 'toggle':
+                    device.togglePowerState();
+                    break;
+                case 'getInfo':
+                    node.deviceInstance[0].getSysInfo()
+                        .then(info => {
+                            let msg = {};
+                            msg.payload = info;
+                            msg.payload.timestamp = moment().format();
+                            node.send(msg);
+                        }).catch(error => { return node.handleConnectionError(error) });
+                    break;
+                case 'getCloudInfo':
+                    node.deviceInstance[0].cloud.getInfo()
+                        .then(info => {
+                            let msg = {};
+                            msg.payload = info;
+                            msg.payload.timestamp = moment().format();
+                            node.send(msg);
+                        }).catch(error => { return node.handleConnectionError(error) });
+                    break;
+                case 'getQuickInfo':
+                    device.getInfo()
+                        .then(info => {
+                            let msg = {};
+                            msg.payload = info;
+                            msg.payload.plug = node.deviceInstance.findIndex(x => x === device);
+                            msg.payload.timestamp = moment().format();
+                            node.send(msg);
+                        }).catch(error => { return node.handleConnectionError(error) });
+                    break;
+                case 'getMeterInfo':
+                    device.emeter.getRealtime()
+                        .then(info => {
+                            let msg = {};
+                            msg.payload = info;
+                            msg.payload.plug = node.deviceInstance.findIndex(x => x === device);
+                            msg.payload.timestamp = moment().format();
+                            node.send(msg);
+                        }).catch(error => { return node.handleConnectionError(error) });
+                    break;
+                case 'clearEvents':
+                    context.set('action', []);
+                    break;
+                case 'eraseStats':
+                    device.emeter.eraseStats({})
+                        .then((result) => {
+                            let msg = {};
+                            msg.payload = result;
+                            node.send(msg);
+                        }).catch(error => { return node.handleConnectionError(error) });
+                    break;
+                default:
+                    if (EVENT_ACTIONS.indexOf(input) !== -1 && enabledActions.indexOf(input) === -1) enabledActions.push(input);
+                    context.set('action', enabledActions);
+            };
+        };
         //EVENTS
-        node.checkAction = function(action) {
+        node.checkAction = function (action) {
             return context.get('action') !== undefined &&
-            context.get('action') !== null &&
-            context.get('action').includes(action);
+                context.get('action') !== null &&
+                context.get('action').includes(action);
         };
-        node.sendDeviceSysInfo = function() {
-            node.deviceInstance.getSysInfo()
-            .then(info => {
-                if (info.relay_state === 1) {
-                    context.set('state','on');
-                    node.status({fill:'green',shape:'dot',text:'Turned ON'});
-                } else {
-                    context.set('state','off');
-                    node.status({fill:'red',shape:'dot',text:'Turned OFF'});
-                }
-                let msg = {};
-                msg.payload = info;
-                msg.payload.timestamp = moment().format();
-                node.send(msg);
-            }).catch(error => {return node.handleConnectionError(error)});
-        };
-        node.sendDeviceCloudInfo = function() {
-            node.deviceInstance.cloud.getInfo()
-            .then(info => {
-                let msg = {};
-                msg.payload = info;
-                msg.payload.timestamp = moment().format();
-                node.send(msg);
-            }).catch(error => {return node.handleConnectionError(error)});
-        };
-        node.sendDeviceQuickInfo = function() {
-            node.deviceInstance.getInfo()
-            .then(info => {
-                let msg = {};
-                msg.payload = info;
-                msg.payload.timestamp = moment().format();
-                node.send(msg);
-            }).catch(error => {return node.handleConnectionError(error)});
-        };
-        node.sendDeviceMeterInfo = function() {
-            node.deviceInstance.emeter.getRealtime()
-            .then(info => {
-                const current = numeral(info.current_ma/1000.0).format('0.[000]');
-                const voltage = numeral(info.voltage_mv/1000.0).format('0.[0]');
-                const power = numeral(info.power_mw/1000.0).format('0.[00]');
-                if (context.get('state') === 'on') {
-                    node.status({fill:'green',shape:'dot',text:`Turned ON [${power}W: ${voltage}V@${current}A]`});
-                } else {
-                    node.status({fill:'red',shape:'dot',text:`Turned OFF [${power}W: ${voltage}V@${current}A]`});
-                }
-                const msg = {};
-                msg.payload = info;
-                msg.payload.timestamp = moment().format();
-                node.send(msg);
-            }).catch(error => {return node.handleConnectionError(error)});
-        };
-        node.sendPowerUpdateEvent = function(powerOn) {
-            if (node.checkAction('getPowerUpdateEvents')) {
-                let msg = {};
-                msg.payload = {};
-                msg.payload.powerOn = powerOn;
-                msg.payload.timestamp = moment().format();
-                node.send(msg);
+        node.sendEvent = function (event, device, value) {
+            switch (event) {
+                case 'power-on':
+                case 'power-off':
+                    if (node.checkAction('getPowerEvents')) {
+                        let msg = {};
+                        msg.payload = {};
+                        msg.payload.event = event;
+                        msg.payload.state = value;
+                        msg.payload.device = node.deviceInstance.findIndex(x => x === device);
+                        msg.payload.timestamp = moment().format();
+                        node.send(msg);
+                    };
+                    break;
+                case 'power-update':
+                    if (node.checkAction('getPowerUpdateEvents')) {
+                        let msg = {};
+                        msg.payload = {};
+                        msg.payload.event = event;
+                        msg.payload.state = value;
+                        msg.payload.device = node.deviceInstance.findIndex(x => x === device);
+                        msg.payload.timestamp = moment().format();
+                        node.send(msg);
+                    };
+                    break;
+                case 'in-use':
+                case 'not-in-use':
+                    if (node.checkAction('getInUseEvents')) {
+                        let msg = {};
+                        msg.payload = {};
+                        msg.payload.event = event;
+                        msg.payload.state = value;
+                        msg.payload.device = node.deviceInstance.findIndex(x => x === device);
+                        msg.payload.timestamp = moment().format();
+                        node.send(msg);
+                    };
+                    break;
+                case 'in-use-update':
+                    if (node.checkAction('getInUseUpdateEvents')) {
+                        let msg = {};
+                        msg.payload = {};
+                        msg.payload.event = event;
+                        msg.payload.state = value;
+                        msg.payload.device = node.deviceInstance.findIndex(x => x === device);
+                        msg.payload.timestamp = moment().format();
+                        node.send(msg);
+                    };
+                    break;
+                case 'emeter-realtime-update':
+                    if (node.checkAction('getMeterUpdateEvents')) {
+                        let msg = {};
+                        msg.payload = {};
+                        msg.payload.event = event;
+                        msg.payload.emeter = value;
+                        msg.payload.device = node.deviceInstance.findIndex(x => x === device);
+                        msg.payload.timestamp = moment().format();
+                        node.send(msg);
+                    };
+                    break;
+                case 'device-online':
+                case 'device-offline':
+                    if (event === 'device-offline') {
+                        node.deviceConnected = false;
+                        node.status({ fill: 'red', shape: 'ring', text: 'Not Reachable' });
+                    } else {
+                        node.deviceConnected = true;
+                        node.status({ fill: 'green', shape: 'dot', text: 'Connected' });
+                    };
+                    if (node.checkAction('getOnlineEvents')) {
+                        let msg = {};
+                        msg.payload = {};
+                        msg.payload.event = event;
+                        msg.payload.state = value;
+                        msg.payload.device = device;
+                        msg.payload.timestamp = moment().format();
+                        node.send(msg);
+                    };
+                    break;
             }
-        };
-        node.sendInUseEvent = function(inUse) {
-            if (node.checkAction('getInUseEvents')) {
-                let msg = {};
-                msg.payload = {};
-                msg.payload.inUse = inUse;
-                msg.payload.timestamp = moment().format();
-                node.send(msg);
-            }
-        };
-        node.sendDeviceOnlineEvent = function(online) {
-            if (node.checkAction('getOnlineEvents')) {
-                let msg = {};
-                msg.payload = {};
-                msg.payload.online = online;
-                msg.payload.timestamp = moment().format();
-                node.send(msg);
-            }
-        };
-        node.sendEraseStatsResult = function() {
-            node.deviceInstance.emeter.eraseStats({})
-            .then((result) => {
-                const msg = {};
-                msg.payload = result;
-                node.send(msg);
-            }).catch(error => {return node.handleConnectionError(error)});
-        };
-        node.handleConnectionError = function(error) {
+        }
+        node.handleConnectionError = function (error) {
             if (error) node.error(error);
-            node.status({fill:'red',shape:'ring',text:'Not reachable'});
-            node.disconnectClient();
-            return false;
+            node.status({ fill: 'red', shape: 'ring', text: 'Not Reachable' });
+            node.stopAll();
+            node.connectClient();
         };
-        node.on('close', function() {
+        node.stopAll = function () {
+            node.status({ fill: 'red', shape: 'ring', text: 'Disconnected' });
             node.deviceConnected = false;
-            node.stopPolling();
-            node.stopIsAlivePolling();
+            node.deviceInstance.forEach(device => {
+                device.stopPolling();
+            });
+            node.client.stopDiscovery();
+        };
+        node.on('close', function () {
+            node.stopAll();
         });
         node.connectClient();
-        node.startIsAlivePolling();
     }
-
     //Make available as node
     RED.nodes.registerType('smart-plug', SmartPlugNode);
     RED.httpAdmin.get('/smarthome/plugs', (req, res) => {
@@ -284,24 +284,24 @@ module.exports = function(RED) {
             const client = new Client();
             let discoveryTimeout = 10000;
             let devices = [];
-            client.on('device-new', device => {devices.push(device.host)});
-            client.startDiscovery({deviceTypes: ['plug']});
+            client.on('device-new', device => { devices.push(device.host) });
+            client.startDiscovery({ deviceTypes: ['plug'] });
             setTimeout(() => {
-              client.stopDiscovery();
-              res.end(JSON.stringify(devices));
+                client.stopDiscovery();
+                res.end(JSON.stringify(devices));
             }, discoveryTimeout);
-        } catch(error) {res.sendStatus(500).send(error.message)}
+        } catch (error) { res.sendStatus(500).send(error.message) };
     });
     RED.httpAdmin.get('/smarthome/plug', (req, res) => {
         if (!req.query.ip) return res.status(500).send('Missing Device IP…');
         const client = new Client();
-        client.getDevice({host: req.query.ip})
+        client.getDevice({ host: req.query.ip })
             .then(device => {
                 res.end(JSON.stringify({
                     model: device.model,
                     alias: device.alias
-                }))
+                }));
             })
-            .catch(error => {res.sendStatus(500).send(error.message)});
+            .catch(error => { res.sendStatus(500).send(error.message) });
     });
 };

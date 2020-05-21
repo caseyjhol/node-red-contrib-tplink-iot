@@ -37,7 +37,7 @@ or you can use the Palette Manager in Node-RED.
 
 # Inputs
 
-> payload: Object | string | boolean
+> payload: Object | string | boolean | array
 
 ## On/Off
 
@@ -51,7 +51,16 @@ or you can use the Palette Manager in Node-RED.
 
 `false` - Turn off the device.
 
-`switch` - Toggle opposite power state of the device.
+`toggle` - Toggle opposite power state of the device.
+
+## Multi-Plug On/OFF
+
+```js
+{
+	"state": true // true is "on", false is "off", "toggle" sets the opposite power state
+	"plug": 1 // whole number corresponding to "Plug" number on power strip.  Optional.
+}
+```
 
 ## Brightness
 
@@ -81,35 +90,37 @@ or you can use the Palette Manager in Node-RED.
 
 ## Commands
 
-`getInfo` - Fetch the device information.
+`getInfo` - Fetch the device information.  Does not support multi-plug devices.
 
-`getCloudInfo` - Fetch the device information from the cloud.
+`getCloudInfo` - Fetch the device information from the cloud.  Does not support multi-plug devices.
 
-`getQuickInfo` - Fetch most popular proprieties, such as username, device consumption, mode, lighting state, and many more.
+`getQuickInfo` - Fetch most popular proprieties, such as username, device consumption, mode, lighting state, and many more.  Supports multi-plug devices.
 
-`getMeterInfo` - Fetch the current device consumption.
+`getMeterInfo` - Fetch the current device consumption.  Supports multi-plug devices.
 
-`clearEvents` - Unsubscribe events.
+`clearEvents` - Unsubscribe events.  Does not support multi-plug devices.
 
-`eraseStats` - Clear all the meter statistics.
+`eraseStats` - Clear all the meter statistics.  Supports multi-plug devices.
 
 ## Events
 
-`getMeterEvents` - Subscribe to meter information events.
+`getMeterUpdateEvents` - Subscribe to meter information events.  Supports multi-plug devices.
 
-`getInfoEvents` - Subscribe to information events.
+`getPowerEvents` - Subscribe to power on/off events.  Supports multi-plug devices.
 
-`getPowerUpdateEvents` - Subscribe to power on/off events.
+`getPowerUpdateEvents` - Subscribe to power update events.  Supports multi-plug devices.
 
-`getInUseEvents` - Subscribe to device usage events.
+`getInUseEvents` - Subscribe to device usage events.  Supports multi-plug devices.
 
-`getOnlineEvents` - Subscribe to online/offline events.
+`getInUseUpdateEvents` - Subscribe to device usage update events.  Supports multi-plug devices.
 
-*Multiple events can be used as a list separated with the `|` character or with an array via the `events` property.*
+`getOnlineEvents` - Subscribe to online/offline events.  Does not support multi-plug devices.
+
+*Multiple events can be used as an array via the `events` property.*
 
 ```js
 {
-	"events": ["getMeterEvents", "getInfoEvents"]
+	"events": ["getMeterUpdateEvents", "getPowerEvents"]
 }
 ```
 
