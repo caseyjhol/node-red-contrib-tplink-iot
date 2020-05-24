@@ -107,9 +107,11 @@ module.exports = function (RED) {
         node.sendInput = function (device, input) {
             const EVENT_ACTIONS = ['getMeterUpdateEvents', 'getPowerEvents', 'getPowerUpdateEvents', 'getInUseEvents', 'getInUseUpdateEvents', 'getOnlineEvents'];
             let enabledActions = context.get('action');
-            let msg_test = input.toUpperCase();
-            if (msg_test === 'TRUE' || msg_test === 'ON') input = true;
-            if (msg_test === 'FALSE' || msg_test === 'OFF') input = false;
+            if (typeof input === 'string' || input instanceof String) {
+				let msg_test = input.toUpperCase();
+				if (msg_test === 'TRUE' || msg_test === 'ON') input = true;
+				if (msg_test === 'FALSE' || msg_test === 'OFF') input = false;
+			};
             switch (input) {
                 case true:
                 case false:
