@@ -29,6 +29,7 @@ module.exports = function (RED) {
         node.connectClient = function () {
             const client = new Client;
             node.client = client;
+			node.deviceInstance = [];
             (async () => {
                 const device = await client.getDevice({ host: deviceIP });
                 client.on('device-online', () => { node.sendEvent('device-online', deviceIP, 'online') });
