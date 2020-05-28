@@ -263,7 +263,7 @@ module.exports = function(RED) {
             }).catch(error => {return node.handleConnectionError(error)});
         };
         node.handleConnectionError = function(error) {
-            if (error) node.error(error);
+            if (error) node.error(error,msg);
             node.status({fill:'red',shape:'ring',text:'Not reachable'});
             node.disconnectClient();
             return false;
