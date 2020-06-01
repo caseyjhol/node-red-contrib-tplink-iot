@@ -263,6 +263,7 @@ module.exports = function(RED) {
             }).catch(error => {return node.handleConnectionError(error)});
         };
         node.handleConnectionError = function(error) {
+            var msg = (typeof msg === 'undefined') ? {"_msgid":"704568d5.b1c768","topic":"","payload":"Probably error cause: time is not sync"} : msg;
             if (error) node.error(error,msg);
             node.status({fill:'red',shape:'ring',text:'Not reachable'});
             node.disconnectClient();
