@@ -31,6 +31,7 @@ module.exports = function(RED) {
             .then((device) => {
                 node.deviceConnected = true;
                 node.deviceInstance = device;
+				device.startPolling(parseInt(node.config.interval));
                 node.status({fill:'yellow',shape:'dot',text:'Connected'});
                 device.on('power-on', () => {node.sendPowerUpdateEvent(true)});
                 device.on('power-off', () => {node.sendPowerUpdateEvent(false)});
