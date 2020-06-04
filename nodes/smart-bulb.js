@@ -139,7 +139,7 @@ module.exports = function(RED) {
 
 		//INPUTS
 		node.on('input', function(msg) {
-			if (!node.isClientConnected()) return node.handleConnectionError('Not reachable');
+			if (!node.isClientConnected()) return node.handleConnectionError('Not reachable', msg);
 			const EVENT_ACTIONS = ['getMeterEvents','getInfoEvents','getPowerUpdateEvents','getOnlineEvents'];
 			let enabledActions = [];
 
@@ -168,7 +168,7 @@ module.exports = function(RED) {
 
                 Promise.all(promises)
                     .then(() => {node.sendDeviceSysInfo()})
-                    .catch(error => {return node.handleConnectionError(error)});
+                    .catch(error => {return node.handleConnectionError(error, msg)});
 
                 if (msg.payload.hasOwnProperty('events')) {
                     msg.payload.events.forEach(action => {
@@ -184,7 +184,7 @@ module.exports = function(RED) {
             } else {
 				if(msg.payload == true||msg.payload == false) {
 					node.deviceInstance.setPowerState(msg.payload).then(() => {node.sendDeviceSysInfo()})
-					.catch(error => {return node.handleConnectionError(error)});
+					.catch(error => {return node.handleConnectionError(error, msg)});
 				} else if (msg.payload.includes('brightness')) {
 	        		const brightness = parseInt(msg.payload.split(':')[1]);
 	        		setBrightness(brightness, node)
@@ -233,7 +233,7 @@ module.exports = function(RED) {
 				msg.payload = info;
 				msg.payload.timestamp = moment().format();
 				node.send(msg);
-			}).catch(error => {return node.handleConnectionError(error)});
+			}).catch(error => {return node.handleConnectionError(error, msg)});
 		};
 		node.sendDeviceCloudInfo = function() {
 			node.deviceInstance.cloud.getInfo()
@@ -242,7 +242,7 @@ module.exports = function(RED) {
 				msg.payload = info;
 				msg.payload.timestamp = moment().format();
 				node.send(msg);
-			}).catch(error => {return node.handleConnectionError(error)});
+			}).catch(error => {return node.handleConnectionError(error, msg)});
 		};
 		node.sendDeviceQuickInfo = function() {
 			node.deviceInstance.getInfo()
@@ -251,7 +251,7 @@ module.exports = function(RED) {
 				msg.payload = info;
 				msg.payload.timestamp = moment().format();
 				node.send(msg);
-			}).catch(error => {return node.handleConnectionError(error)});
+			}).catch(error => {return node.handleConnectionError(error, msg)});
 		};
 		node.sendPowerUpdateEvent = function(powerOn) {
 			if (node.checkAction('getPowerUpdateEvents')) {
@@ -273,7 +273,7 @@ module.exports = function(RED) {
 				msg.payload.power_w = power;
 				msg.payload.timestamp = moment().format();
 				node.send(msg);
-			}).catch(error => {return node.handleConnectionError(error)});
+			}).catch(error => {return node.handleConnectionError(error, msg)});
 		};
 		node.sendDeviceOnlineEvent = function(online) {
 			if (node.checkAction('getOnlineEvents')) {
@@ -290,10 +290,10 @@ module.exports = function(RED) {
 				const msg = {};
 				msg.payload = result;
 				node.send(msg);
-			}).catch(error => {return node.handleConnectionError(error)});
+			}).catch(error => {return node.handleConnectionError(error, msg)});
 		};
-		node.handleConnectionError = function(error) {
-			if (error) node.error(error);
+		node.handleConnectionError = function(error, msg) {
+			if (error) node.error(error, msg);
 			node.status({fill:'red',shape:'ring',text:'not reachable'});
 			node.disconnectClient();
 			return false;

@@ -62,7 +62,7 @@ module.exports = function (RED) {
         };
         //INPUTS
         node.on('input', function (msg) {
-            if (!node.deviceConnected) return node.handleConnectionError('Not Reachable');
+            if (!node.deviceConnected) return node.handleConnectionError('Not Reachable', msg);
             if (isPlainObject(msg.payload)) {
                 if (msg.payload.hasOwnProperty('brightness') || msg.payload.hasOwnProperty('led')) {
                     let promises = [];
@@ -84,7 +84,7 @@ module.exports = function (RED) {
                     if (msg.payload.hasOwnProperty('led')) {
                         promises.push(node.deviceInstance[0].setLedState(msg.payload.led));
                     };
-                    Promise.all(promises).catch(error => { return node.handleConnectionError(error) });
+                    Promise.all(promises).catch(error => { return node.handleConnectionError(error, msg) });
                 } else if (msg.payload.hasOwnProperty('plug')) {
                     node.sendInput(node.deviceInstance[msg.payload.plug], msg.payload.state);
                 } else if (msg.payload.hasOwnProperty('state')) {
@@ -127,7 +127,7 @@ module.exports = function (RED) {
                             msg.payload = info;
                             msg.payload.timestamp = moment().format();
                             node.send(msg);
-                        }).catch(error => { return node.handleConnectionError(error) });
+                        }).catch(error => { return node.handleConnectionError(error, msg) });
                     break;
                 case 'getCloudInfo':
                     node.deviceInstance[0].cloud.getInfo()
@@ -136,7 +136,7 @@ module.exports = function (RED) {
                             msg.payload = info;
                             msg.payload.timestamp = moment().format();
                             node.send(msg);
-                        }).catch(error => { return node.handleConnectionError(error) });
+                        }).catch(error => { return node.handleConnectionError(error, msg) });
                     break;
                 case 'getQuickInfo':
                     device.getInfo()
@@ -146,7 +146,7 @@ module.exports = function (RED) {
                             msg.payload.plug = node.deviceInstance.findIndex(x => x === device);
                             msg.payload.timestamp = moment().format();
                             node.send(msg);
-                        }).catch(error => { return node.handleConnectionError(error) });
+                        }).catch(error => { return node.handleConnectionError(error, msg) });
                     break;
                 case 'getMeterInfo':
                     device.emeter.getRealtime()
@@ -156,7 +156,7 @@ module.exports = function (RED) {
                             msg.payload.plug = node.deviceInstance.findIndex(x => x === device);
                             msg.payload.timestamp = moment().format();
                             node.send(msg);
-                        }).catch(error => { return node.handleConnectionError(error) });
+                        }).catch(error => { return node.handleConnectionError(error, msg) });
                     break;
                 case 'clearEvents':
                     context.set('action', []);
@@ -167,7 +167,7 @@ module.exports = function (RED) {
                             let msg = {};
                             msg.payload = result;
                             node.send(msg);
-                        }).catch(error => { return node.handleConnectionError(error) });
+                        }).catch(error => { return node.handleConnectionError(error, msg) });
                     break;
                 default:
                     if (EVENT_ACTIONS.indexOf(input) !== -1 && enabledActions.indexOf(input) === -1) enabledActions.push(input);
@@ -255,8 +255,8 @@ module.exports = function (RED) {
                     break;
             }
         }
-        node.handleConnectionError = function (error) {
-            if (error) node.error(error);
+        node.handleConnectionError = function (error, msg) {
+            if (error) node.error(error, msg);
             node.status({ fill: 'red', shape: 'ring', text: 'Error' });
             node.deviceConnected = false;
             node.stopAll();

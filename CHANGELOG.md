@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 
 Bear in mind that the [GIT version](https://github.com/caseyjhol/node-red-contrib-tplink) *(source-code)* is always bleeding edge and may *(in most cases, will)* have changes that won't reflect in NPM/[release](https://github.com/caseyjhol/node-red-contrib-tplink/releases) version.
 
+## 0.3.0 (2020-06-03)
+
+### Added
+
+- Hue, Saturation, and Brightness (HSB) support for multicolor bulbs
+- HS300 (multi-plug) support
+
+### Changed
+
+- Separated getPowerEvents/getInUseEvents from getPowerUpdateEvents/getInUseUpdateEvents
+
+### Fixed
+
+- Fix emission of online/offline events in smart-plug node
+
 ## 0.2.1
 
 ### Changed
