@@ -60,7 +60,7 @@ or you can use the Palette Manager in Node-RED.
 ```js
 {
 	"plug": 1 // whole number corresponding to "Plug" number on power strip.  Optional.
-	"state": true // true is "on", false is "off", "toggle" sets the opposite power state
+	"state": true // true is "on", false is "off", "toggle" or "switch" sets the opposite power state
 }
 ```
 
