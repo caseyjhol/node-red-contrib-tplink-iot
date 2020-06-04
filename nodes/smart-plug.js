@@ -72,7 +72,7 @@ module.exports = function (RED) {
                             if (msg_test === 'TRUE' || msg_test === 'ON') msg.payload.state = true;
                             if (msg_test === 'FALSE' || msg_test === 'OFF') msg.payload.state = false;
                         };
-                        if (msg.payload.state === 'toggle') {
+                        if (msg.payload.state === 'toggle' || msg.payload.state === 'switch') {
                             promises.push(node.deviceInstance[0].togglePowerState());
                         } else {
                             promises.push(node.deviceInstance[0].setPowerState(msg.payload.state));
@@ -132,6 +132,7 @@ module.exports = function (RED) {
                     device.setPowerState(input);
                     break;
                 case 'toggle':
+				case 'switch':
                     device.togglePowerState();
                     break;
                 case 'getInfo':
