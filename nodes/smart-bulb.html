@@ -119,7 +119,7 @@
       <ul>
       	<li><code>true</code> - Turn on the device.</li>
       	<li><code>false</code> - Turn off the device.</li>
-        <li><code>switch</code> - Switch the power state of the device.</li>
+        <li><code>toggle</code> - Switch the power state of the device.</li>
       	<li><code>brightness:[1-100]</code> - Sets the brightness of the bulb.</li>
         <li><code>temperature:[2700-6500]</code> - Sets the temperature of the bulb.</li>
         <li>Color via <code>HSB</code> JSON blob, see <a href="https://github.com/caseyjhol/node-red-contrib-tplink/blob/master/README.md" target="_blank" rel="external">Github README for more info</a>.</li>
@@ -146,9 +146,10 @@
     	<dt>msg.payload<span class="property-type">Object | string</span></dt>
       <ul>
       	<li><code>getInfoEvents</code> - Subscribe to proprieties` events, such as changes in brightness, temperature, etc.</li>
-      	<li><code>getPowerUpdateEvents</code> - Subscribe just to power ON/OFF events.</li>
+      	<li><code>getPowerEvents</code> - Subscribe to power ON/OFF events.</li>
+      	<li><code>getPowerUpdateEvents</code> - Subscribe to power update events.</li>
         <li><code>getMeterEvents</code> - Subscribe to meter information events.</li>
-      	<li><code>getOnlineEvents</code> - Subscribe just to online/offline events.</li>
+      	<li><code>getOnlineEvents</code> - Subscribe to online/offline events.</li>
       </ul>
     </dl>
     <p>Multiple events can be used as a list separated with the <code>|</code> character or with an array via the <code>events</code> property.</p>
