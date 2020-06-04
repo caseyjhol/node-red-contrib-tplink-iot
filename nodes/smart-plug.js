@@ -71,7 +71,7 @@ module.exports = function (RED) {
                             let msg_test = msg.payload.state.toUpperCase();
                             if (msg_test === 'TRUE' || msg_test === 'ON') msg.payload.state = true;
                             if (msg_test === 'FALSE' || msg_test === 'OFF') msg.payload.state = false;
-                        }
+                        };
                         if (msg.payload.state === 'toggle') {
                             promises.push(node.deviceInstance[0].togglePowerState());
                         } else {
@@ -89,7 +89,7 @@ module.exports = function (RED) {
                     node.sendInput(node.deviceInstance[msg.payload.plug], msg.payload.state);
                 } else if (msg.payload.hasOwnProperty('state')) {
                     node.sendInput(node.deviceInstance[0], msg.payload.state);
-                }
+                };
                 if (msg.payload.hasOwnProperty('events')) {
 					if (typeof msg.payload.events === 'array' || msg.payload.events instanceof Array) {
 						msg.payload.events.forEach(event => {
