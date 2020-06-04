@@ -137,9 +137,7 @@ Hue, Saturation, and Brightness (HSB) support for multicolor bulbs.
 ```
 or
 ```js
-{
-	"getMeterUpdateEvents|getPowerEvents"
-}
+"getMeterUpdateEvents|getPowerEvents"
 ```
 
 # For developers
