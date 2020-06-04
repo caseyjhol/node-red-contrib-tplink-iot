@@ -128,11 +128,17 @@ Hue, Saturation, and Brightness (HSB) support for multicolor bulbs.
 
 `getOnlineEvents` - Subscribe to online/offline events.  Event emits on poll interval.
 
-*Multiple events can be used as an array via the `events` property.*
+*Multiple events can be used as an array via the `events` property or string separated by "|"..*
 
 ```js
 {
 	"events": ["getMeterUpdateEvents", "getPowerEvents"]
+}
+```
+or
+```js
+{
+	"getMeterUpdateEvents|getPowerEvents"
 }
 ```
 
