@@ -91,9 +91,16 @@ module.exports = function (RED) {
                     node.sendInput(node.deviceInstance[0], msg.payload.state);
                 }
                 if (msg.payload.hasOwnProperty('events')) {
-                    msg.payload.events.forEach(event => {
-                        node.sendInput(node.deviceInstance[0], event);
-                    });
+					if (typeof msg.payload.events === 'array' || msg.payload.events instanceof Array) {
+						msg.payload.events.forEach(event => {
+							node.sendInput(node.deviceInstance[0], event);
+						});
+					} else if (msg.payload.events.includes("|")) {
+						let msg_temp = msg.payload.events.split("|");
+						msg_temp.forEach(event => {
+							node.sendInput(node.deviceInstance[0], event);
+						});
+					}
                 };
             } else if (typeof msg.payload === 'array' || msg.payload instanceof Array) {
                 msg.payload.forEach(event => {
