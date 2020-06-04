@@ -43,7 +43,7 @@ or you can use the Palette Manager in Node-RED.
 
 ```js
 {
-	"state": true // true is "on", false is "off", "toggle" sets the opposite power state
+	"state": true // true is "on", false is "off", "toggle" or "switch" sets the opposite power state
 }
 ```
 
@@ -52,6 +52,8 @@ or you can use the Palette Manager in Node-RED.
 `false` - Turn off the device.
 
 `toggle` - Toggle opposite power state of the device.
+
+`switch` - Toggle opposite power state of the device.
 
 ## Multi-Plug On/Off
 
