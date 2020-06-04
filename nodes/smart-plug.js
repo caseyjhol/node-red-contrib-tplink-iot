@@ -100,6 +100,8 @@ module.exports = function (RED) {
 						msg_temp.forEach(event => {
 							node.sendInput(node.deviceInstance[0], event);
 						});
+					} else {
+						node.sendInput(node.deviceInstance[0], msg.payload.events);
 					}
                 };
             } else if (typeof msg.payload === 'array' || msg.payload instanceof Array) {
