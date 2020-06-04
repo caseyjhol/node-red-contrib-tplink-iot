@@ -99,6 +99,11 @@ module.exports = function (RED) {
                 msg.payload.forEach(event => {
                     node.sendInput(node.deviceInstance[0], event);
                 });
+			} else if (msg.payload.includes("|")) {
+				let msg_temp = msg.payload.split("|");
+				msg_temp.forEach(event => {
+                    node.sendInput(node.deviceInstance[0], event);
+                });
             } else {
                 node.sendInput(node.deviceInstance[0], msg.payload);
             };
