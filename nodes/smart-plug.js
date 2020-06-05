@@ -50,9 +50,9 @@ module.exports = function (RED) {
                     node.monitorEvents(device);
                 };
                 node.deviceInstance.unshift(device);
+            	node.deviceConnected = true;
+            	node.status({ fill: 'green', shape: 'dot', text: 'Connected' });
             })().catch(() => { return node.handleConnectionError() });
-            node.deviceConnected = true;
-            node.status({ fill: 'green', shape: 'dot', text: 'Connected' });
             client.startDiscovery({ broadcast: deviceIP, discoveryInterval: node.config.interval, offlineTolerance: 1, breakoutChildren: false });
         };
         node.monitorEvents = function (device) {
