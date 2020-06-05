@@ -4,7 +4,7 @@ module.exports = function (RED) {
     'use strict';
     const Client = require('tplink-smarthome-api').Client;
     function SmartPlugNode(config) {
-        const EVENT_ACTIONS = ['getMeterUpdateEvents', 'getPowerEvents', 'getPowerUpdateEvents', 'getInUseEvents', 'getInUseUpdateEvents', 'getOnlineEvents'];
+        const EVENT_ACTIONS = ['getInfoEvents', 'getMeterEvents', 'getPowerEvents', 'getPowerUpdateEvents', 'getInUseEvents', 'getInUseUpdateEvents', 'getOnlineEvents'];
         const COMMANDS = ['getInfo', 'getCloudInfo', 'getQuickInfo', 'getMeterInfo', 'clearEvents', 'eraseStats'];
 
         RED.nodes.createNode(this, config);
@@ -315,7 +315,7 @@ module.exports = function (RED) {
                     };
                     break;
                 case 'emeter-realtime-update':
-                    if (node.checkAction('getMeterUpdateEvents')) {
+                    if (node.checkAction('getMeterEvents')) {
                         let msg = {};
                         msg.payload = {};
                         msg.payload.event = event;
