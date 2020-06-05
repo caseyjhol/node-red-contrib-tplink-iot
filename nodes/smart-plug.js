@@ -288,6 +288,16 @@ module.exports = function (RED) {
                         msg.payload.timestamp = moment().format();
                         node.send(msg);
                     };
+					//getInfoEvents (placed here to take advantage of polling interval)
+					if (node.checkAction('getInfoEvents')) {
+						node.deviceInstance[0].getSysInfo()
+                        .then(info => {
+                            let msg = {};
+                            msg.payload = info;
+                            msg.payload.timestamp = moment().format();
+                            node.send(msg);
+                        }).catch(error => { return node.handleConnectionError(error, {}) });
+                    };
                     break;
                 case 'in-use':
                 case 'not-in-use':
