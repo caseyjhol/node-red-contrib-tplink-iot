@@ -164,6 +164,7 @@ module.exports = function (RED) {
                     return;
             }
 
+						msg.topic = node.config.device;
             msg.payload = payload;
 
             node.send(msg);
@@ -190,6 +191,7 @@ module.exports = function (RED) {
                     return device.getSysInfo()
                         .then(info => {
                             let msg = {};
+														msg.topic = node.config.device;
                             msg.payload = info;
                             msg.payload.timestamp = moment().format();
                             node.send(msg);
@@ -200,6 +202,7 @@ module.exports = function (RED) {
                     return device.cloud.getInfo()
                         .then(info => {
                             let msg = {};
+														msg.topic = node.config.device;
                             msg.payload = info;
                             msg.payload.timestamp = moment().format();
                             node.send(msg);
@@ -209,6 +212,7 @@ module.exports = function (RED) {
                     return device.getInfo()
                         .then(info => {
                             let msg = {};
+														msg.topic = node.config.device;
                             msg.payload = info;
                             msg.payload.plug = node.deviceInstance.findIndex(x => x === device);
                             msg.payload.timestamp = moment().format();
@@ -229,6 +233,7 @@ module.exports = function (RED) {
                             }
 
                             let msg = {};
+														msg.topic = node.config.device;
                             msg.payload = info;
                             msg.payload.plug = node.deviceInstance.findIndex(x => x === device);
                             msg.payload.timestamp = moment().format();
@@ -242,6 +247,7 @@ module.exports = function (RED) {
                     device.emeter.eraseStats({})
                         .then((result) => {
                             let msg = {};
+														msg.topic = node.config.device;
                             msg.payload = result;
                             node.send(msg);
                         }).catch(error => { return node.handleConnectionError(error, {}) });
@@ -274,6 +280,7 @@ module.exports = function (RED) {
                 case 'power-off':
                     if (node.checkAction('getPowerEvents')) {
                         let msg = {};
+												msg.topic = node.config.device;
                         msg.payload = {};
                         msg.payload.event = event;
                         msg.payload.powerOn = value;
@@ -286,6 +293,7 @@ module.exports = function (RED) {
                 case 'power-update':
                     if (node.checkAction('getPowerUpdateEvents')) {
                         let msg = {};
+												msg.topic = node.config.device;
                         msg.payload = {};
                         msg.payload.event = event;
                         msg.payload.powerOn = value;
@@ -297,6 +305,7 @@ module.exports = function (RED) {
                     //getInfoEvents (placed here to take advantage of polling interval)
                     if (node.checkAction('getInfoEvents')) {
                         let msg = {};
+												msg.topic = node.config.device;
                         msg.payload = device.sysInfo;
                         msg.payload.timestamp = moment().format();
                         node.send(msg);
@@ -306,6 +315,7 @@ module.exports = function (RED) {
                 case 'not-in-use':
                     if (node.checkAction('getInUseEvents')) {
                         let msg = {};
+												msg.topic = node.config.device;
                         msg.payload = {};
                         msg.payload.event = event;
                         msg.payload.inUse = value;
@@ -318,6 +328,7 @@ module.exports = function (RED) {
                 case 'in-use-update':
                     if (node.checkAction('getInUseUpdateEvents')) {
                         let msg = {};
+												msg.topic = node.config.device;
                         msg.payload = {};
                         msg.payload.event = event;
                         msg.payload.inUse = value;
@@ -330,6 +341,7 @@ module.exports = function (RED) {
                 case 'emeter-realtime-update':
                     if (node.checkAction('getMeterEvents')) {
                         let msg = {};
+												msg.topic = node.config.device;
                         msg.payload = {};
                         msg.payload.event = event;
                         msg.payload.emeter = value;
@@ -342,6 +354,7 @@ module.exports = function (RED) {
                 case 'device-offline':
                     if (node.checkAction('getOnlineEvents')) {
                         let msg = {};
+												msg.topic = node.config.device;
                         msg.payload = {};
                         msg.payload.event = event;
                         msg.payload.online = value;
