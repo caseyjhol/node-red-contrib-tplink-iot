@@ -448,7 +448,7 @@ module.exports = function (RED) {
         placeholder: true,
         queue: []
       })
-      node.newDevice(this.config.deviceId)
+      node.connectDevice(this.config.deviceId)
     } else {
       // Otherwise, initialize status (with no devices)
       node.updateStatus()
