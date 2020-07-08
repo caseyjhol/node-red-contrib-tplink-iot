@@ -18,7 +18,7 @@
   },
   "node-red": {
     "nodes": {
-      "tplink": "nodes/tplink.js"
+      "kasa": "nodes/kasa.js"
     }
   },
   "engines": {
@@ -38,8 +38,8 @@
     ".npmignore",
     "package.json",
     "nodes/icons/",
-    "nodes/tplink.js",
-    "nodes/tplink.html"
+    "nodes/kasa.js",
+    "nodes/kasa.html"
   ],
   "keywords": [
     "node-red",

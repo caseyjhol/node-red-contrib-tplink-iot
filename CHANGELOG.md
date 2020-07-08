@@ -4,12 +4,12 @@ All notable changes to this project will be documented in this file.
 
 Bear in mind that the [GIT version](https://github.com/caseyjhol/node-red-contrib-tplink) *(source-code)* is always bleeding edge and may *(in most cases, will)* have changes that won't reflect in NPM/[release](https://github.com/caseyjhol/node-red-contrib-tplink/releases) version.
 
-## 1.0.0-alpha (2020-07-07)
+## 1.0.0-alpha.0 (2020-07-08)
 
 ### Changed
 
 - Upgraded to tplink-smarthome-api@3.0.0-beta
-- smart-plug and smart-light combined into one node
+- smart-plug and smart-light combined into one node called "kasa"
 - getXxxxEvents changed to startXxxxEvents
 - Events output "XxxxEvents" on msg.event instead of "getXxxxEvents"
 - clearEvents changed to stopAllEvents

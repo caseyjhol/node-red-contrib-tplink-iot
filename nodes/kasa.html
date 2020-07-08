@@ -1,0 +1,232 @@
+<script type="text/javascript">
+  RED.nodes.registerType('kasa', {
+    category: 'devices',
+    color: '#4acbd6',
+    defaults: {
+      name: { value: '' },
+      device: { value: '' },
+      interval: {
+        value: 60000,
+        required: true,
+        validate: function (v) {
+          let int = parseInt(v, 10)
+          return /^[0-9]+/.test(v) && (int >= 500 || int == 0)
+        }
+      },
+      eventInterval: {
+        value: 15000,
+        required: true,
+        validate: function (v) {
+          let int = parseInt(v, 10)
+          return /^[0-9]+/.test(v) && (int >= 500 || int == 0)
+        }
+      },
+      payload: {
+        value: 'getInfo'
+      },
+      payloadType: {
+        value: 'info'
+      },
+      debug: {
+        value: false
+      }
+    },
+    inputs: 1,
+    outputs: 1,
+    icon: 'icon.svg',
+    align: 'right',
+    paletteLabel: 'kasa',
+    label: function () {
+      return this.name || 'kasa'
+    },
+    oneditprepare: function () {
+      $('#node-input-payload').typedInput({
+        types: [
+          {
+            value: 'info',
+            label: 'info',
+            icon: 'fa fa-info-circle',
+            options: ['getInfo', 'getCloudInfo', 'getQuickInfo', 'getMeterInfo']
+          },
+          {
+            value: 'none',
+            label: 'none',
+            icon: 'fa fa-ban',
+            hasValue: false
+          },
+          'str',
+          'num',
+          'bool',
+          'json',
+          'date'
+        ],
+        default: 'info',
+        typeField: '#node-input-payloadType'
+      })
+
+      function manualDeviceIP() {
+        var current = $('#node-input-device').val()
+        $('#node-input-device').replaceWith('<input type="text" id="node-input-device" style="width: 60%;"/>')
+        $('#node-input-device').val(current)
+      }
+      function searchAndSelectDevice() {
+        var current = $('#node-input-device').val()
+        $('#node-input-device').replaceWith('<select id="node-input-device" style="width: 60%;"></select>')
+        $('#node-input-device').append('<option selected="selected" value="null">searching…</option>')
+        $.get('smarthome/devices')
+          .done(function (data) {
+            var devices = JSON.parse(data)
+            if (devices.length <= 0) {
+              RED.notify('No TP-Link devices found.', 'error')
+            }
+            $('#node-input-device').empty()
+            devices.forEach(function (device) {
+              let shortId = device.host + (device.childId != undefined ? '/' + +device.childId.slice(-2) : '')
+              $('#node-input-device').append(
+                '<option value="' + shortId + '">' + device.alias + ' (' + shortId + ')</option>'
+              )
+            })
+            $('#node-input-device').val(current)
+          })
+          .fail(function () {
+            RED.notify('Something went wrong. Please retry.', 'error')
+          })
+      }
+      $(document).on('change', '#node-input-device', function (event) {
+        if ($('#node-input-name').val().trim().length === 0 || event.target.type == 'select-one') {
+          var currentValue = $('#node-input-device').val()
+          if (currentValue.length > 6) {
+            let [host, childId] = currentValue.split('/')
+            $.get('smarthome/device', { host, childId })
+              .done(function (data) {
+                var device = JSON.parse(data)
+                $('#node-input-name').val(device.alias + ' - ' + device.model)
+              })
+              .fail(function (err) {
+                RED.notify('Sorry. Your selected device is invalid!', 'error')
+              })
+          }
+        }
+      })
+      $('#node-input-scan').click(function () {
+        if ($('#node-input-device').prop('tagName') === 'INPUT') {
+          searchAndSelectDevice()
+        } else {
+          manualDeviceIP()
+        }
+      })
+    }
+  })
+</script>
+<script type="text/x-red" data-template-name="kasa">
+  <div class="form-row">
+    <label for="node-input-name"><i class="icon-tag"></i> Name</label>
+    <input type="text" id="node-input-name" placeholder="Name">
+  </div>
+  <div class="form-row">
+    <label for="node-input-device"><i class="fa fa-server"></i> Device IP</label>
+    <input type="text" id="node-input-device" placeholder="192.168.100.1" style="width: 60%;">
+    <a id="node-input-scan" class="editor-button"><i class="fa fa-search"></i></a>
+  </div>
+  <div class="form-row">
+    <label for="node-input-interval"><i class="fa fa-clock-o"></i> Connection poll interval</label>
+    <input type="text" placeholder="7500" id="node-input-interval">
+  </div>
+  <div class="form-row">
+    <label for="node-input-eventInterval"><i class="fa fa-clock-o"></i> Event poll interval</label>
+    <input type="text" placeholder="2000" id="node-input-eventInterval">
+  </div>
+  <div class="form-row">
+    <label for="node-input-payload"><i class="fa fa-envelope"></i> Output <span data-i18n="node-red:common.label.payload"></span></label>
+    <input type="text" id="node-input-payload">
+    <input type="hidden" id="node-input-payloadType">
+  </div>
+  <div class="form-row">
+    <label for="node-input-debug"><i class="fa fa-bug"></i> <span>Debug</span></label>
+    <input type="checkbox" id="node-input-debug" style="width: auto; margin: 0;">
+  </div>
+</script>
+<script type="text/x-red" data-help-name="kasa">
+  <p>This node controls a <b>TP-Link Smart Plug</b>, <b>TP-Link Smart Light Switch</b>, or <b>TP-Link Smart Bulb</b>.</p>
+  <p>Full support for <a href="https://www.kasasmart.com/us/products/smart-plugs/kasa-smart-wifi-plug-hs100" target="_blank" rel="external">HS100</a>, <a href="https://www.kasasmart.com/us/products/smart-plugs/kasa-smart-wifi-plug-lite-hs103p2" target="_blank" rel="external">HS103</a>, <a href="https://www.kasasmart.com/us/products/smart-plugs/kasa-smart-wifi-plug-mini" target="_blank" rel="external">HS105</a>, <a href="https://www.kasasmart.com/us/products/smart-plugs/kasa-smart-wi-fi-plug-2-outlets-hs107" target="_blank" rel="external">HS107</a>, HS110, <a href="https://www.kasasmart.com/us/products/smart-switches/kasa-smart-wi-fi-light-switch-hs200" target="_blank" rel="external">HS200</a>, <a href="https://www.kasasmart.com/us/products/smart-switches/kasa-smart-wi-fi-light-switch-3-way-kit-hs210kit" target="_blank" rel="external">HS210</a>, <a href="https://www.kasasmart.com/us/products/smart-switches/kasa-smart-wi-fi-light-switch-dimmer-hs220" target="_blank" rel="external">HS220</a>, <a href="https://www.kasasmart.com/us/products/smart-plugs/kasa-smart-wi-fi-power-strip-hs300" target="_blank" rel="external">HS300</a>, <a href="https://www.kasasmart.com/us/products/smart-plugs/kasa-smart-wi-fi-power-strip-kp303" target="_blank" rel="external">KP303</a>, <a href="https://www.kasasmart.com/us/products/smart-plugs/kasa-smart-wifi-outdoor-plug-kp400" target="_blank" rel="external">KP400</a>, <a href="https://www.tp-link.com/us/products/details/cat-5609_LB100.html" target="_blank" rel="external">LB100</a>, <a href="https://www.tp-link.com/us/products/details/cat-5609_LB200.html" target="_blank" rel="external">LB200</a>, <a href="https://www.tp-link.com/us/products/details/cat-5609_LB110.html" target="_blank" rel="external">LB110</a> and <a href="https://www.tp-link.com/us/products/details/cat-5609_LB120.html" target="_blank" rel="external">LB120</a>.</br>Some support for <a href="https://www.tp-link.com/us/products/details/cat-5609_LB130.html" target="_blank" rel="external">LB130</a> and <a href="https://www.tp-link.com/us/products/details/cat-5609_LB230.html" target="_blank" rel="external">LB230</a>.</p>
+
+  <h3>Parameters</h3>
+  <ul>
+    <li><code>Name</code> - Type in the name of the host manually or keep the default device name.</li>
+    <li><code>Device IP</code> - Type in the Device IP address manually or press the button to retreive all locally available devices. To specify a plug in a multi-plug device, append a <code>/</code> followed by the plug number (zero-indexed). Use is optional. Alternatively, or additionally, an input message can include <code>msg.topic</code> with a device IP (and optional plug number).</li>
+    <li><code>Connection poll interval</code> - Interval that is used to poll availability of devices <em>(Min. 500ms / Recommended 10000ms-60000ms.)</em> Set to <code>0</code> to disable availability checks (in which case, OnlineEvents will not trigger, even if started).</li>
+    <li><code>Event poll interval</code> - Interval that is used to poll active devices for events <em>(Min. 500ms / Recommended 1000ms-15000ms.)</em> Set to <code>0</code> to disable event polling (in which case, all events except OnlineEvents will not trigger, even if started).</li>
+    <li><code>Output payload</code> - Types are <code>info</code>, <code>none</code>, <code>string</code>, <code>number</code>, <code>boolean</code>, <code>JSON</code>, and <code>timestamp</code>. Default type is <code>info</code> with a value of <code>getInfo</code>. If set to <code>info</code>, the selected payload command will be fired after completion, and the payload set accordingly. Output payload is ignored if the node input is a command or an event, in which case see below for more information.</li>
+    <li><code>Debug</code> - If enabled, will output device information to the flow editor debug tab.</li>
+  </ul>
+  <p>If any "TCP Timeout" console errors occur raise the timeout limit to at least 15s <em>(15000ms)</em> in your Node-RED's <b>settings.js</b>.</p>
+
+  <h3>Input</h3>
+  <p>Send in a message to control, command, or start/stop events.</p>
+    <dl class="message-properties">
+      <dt>msg</dt>
+      <ul>
+        <li><code>topic</code> - Optional. The device IP (and optional plug). Any message without a topic will use the device configured via the parameters. If no topic is included, and no device is configured, the message will be ignored.</li>
+        <li><code>payload</code> - Required. Either a <b>control</b>, <b>command</b>, or <b>event action</b>. See below for details of each.</li>
+      </ul>
+    </dl>
+
+  <h3>Controls</h3>
+  <p>Control a device by setting its properties.</p>
+  <dl class="message-properties">
+    <dt>msg.payload<span class="property-type">Object | string | boolean | array</span></dt>
+    <ul>
+      <li><code>true</code>/<code>on</code> - Turn on the device.</li>
+      <li><code>false</code>/<code>off</code> - Turn off the device.</li>
+      <li><code>toggle</code> - Switch the power state of the device.</li>
+      <li>Or as an object, all properties optional:
+        <ul>
+          <li><code>state:</code><code>true</code>/<code>on</code>/<code>false</code>/<code>off</code>
+          <li><code>brightness:[1-100]</code> - Sets the brightness of the device.</li>
+          <li><code>temperature:[2700-6500]</code> - Sets the temperature. (Bulb support only) </li>
+          <li><code>hsb:{hue, saturation, brightness}</code> - Sets the color. (Bulb support only) See <a href="https://github.com/caseyjhol/node-red-contrib-tplink/blob/master/README.md" target="_blank" rel="external">Github README for more info</a>.</li>
+          <li><code>led: true</code>/<code>false</code> (Plug/switch support only)</li>
+        </ul>
+      </li>
+    </ul>
+  </dl>
+
+  <h3>Commands</h3>
+  <p>Force the node to output or other misc commands.</p>
+  <dl class="message-properties">
+    <dt>msg.payload<span class="property-type">string</span></dt>
+    <ul>
+      <li><code>getInfo</code> - Fetch the device proprieties, such as brightness, temperature and many more.</li>
+      <li><code>getCloudInfo</code> - Fetch the device proprieties, such as username, bind status and many more, from the cloud.</li>
+      <li><code>getQuickInfo</code> - Fetch most popular proprieties, such as username, device consumption, mode, lighting state, and many more.</li>
+      <li><code>getMeterInfo</code> - Fetch the current device consumption.</li>
+      <li><code>eraseStats</code> - Clear all the meter statistics.</li>
+    </ul>
+  </dl>
+
+  <h3>Events</h3>
+  <p>Subscribe to outputs based on devices's events. Frequency set by <code>Event poll interval</code>.</p>
+  <dl class="message-properties">
+    <dt>msg.payload<span class="property-type">Object | string</span></dt>
+    <ul>
+      <li><code>startPowerEvents/stopPowerEvents</code> - Subscribe just to power ON/OFF events.  Emits on change only.</li>
+      <li><code>startPowerUpdateEvents/stopPowerUpdateEvents</code> - Subscribe just to power ON/OFF events.  Emits on event poll interval.</li>
+      <li><code>startInfoEvents/stopInfoEvents</code> - Subscribe to device info.  Emits on event poll interval.</li>
+      <li><code>startInUseEvents/stopInUseEvents</code> - Subscribe to device usage events.  Emits on change only.</li>
+      <li><code>startInUseUpdateEvents/stopInUseUpdateEvents</code> - Subscribe to device usage events.  Emits on event poll interval.</li>
+      <li><code>startMeterUpdateEvents/stopMeterUpdateEvents</code> - Subscribe to meter information events.  Emits on event poll interval.</li>
+      <li><code>startOnlineEvents/stopOnlineEvents</code> - Subscribe just to online/offline events.  Emits on connection poll interval.</li>
+      <li><code>stopAllEvents</code> - Unsubscribe from all events.</li>
+    </ul>
+  </dl>
+  <p>Multiple events can be used as an array via the <code>events</code> property.</p>
+
+  <h3>Output</h3>
+  <p>Output depends on input message type. For control type messages, the output is configured using the parameters.</p>
+  <p>For command type messages, the output is the result of the command.</p>
+  <p>For event actions, output will occur when the event is triggered.</p>
+  <p>In all cases, <code>msg.topic</code> is set to the device IP (and plug number, if used) and <code>msg.payload</code> will include all relevant data.</p>
+
+  <h3>Get involved</h3>
+  <p>Fork and help the node on <a href="https://github.com/caseyjhol/node-red-contrib-tplink" target="_blank" rel="external">GitHub</a>.<br>
+</script>
