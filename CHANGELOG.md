@@ -4,6 +4,24 @@ All notable changes to this project will be documented in this file.
 
 Bear in mind that the [GIT version](https://github.com/caseyjhol/node-red-contrib-tplink) *(source-code)* is always bleeding edge and may *(in most cases, will)* have changes that won't reflect in NPM/[release](https://github.com/caseyjhol/node-red-contrib-tplink/releases) version.
 
+## 1.0.0-alpha (2020-07-07)
+
+### Changed
+
+- Upgraded to tplink-smarthome-api@3.0.0-beta
+- smart-plug and smart-light combined into one node
+- getXxxxEvents changed to startXxxxEvents
+- Events output "XxxxEvents" on msg.event instead of "getXxxxEvents"
+- clearEvents changed to stopAllEvents
+- Node status reflects number of devices connected if more than one
+
+### Added
+
+- stopXxxxEvents to match the startXxxxEvents
+- Multiple devices allowable per node (using msg.topic on input)
+- Individual plugs on multi-plug devices can be accessed
+- Polling can be turned off if not needed
+
 ## 0.4.3 (2020-06-08)
 
 ### Fixed

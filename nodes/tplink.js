@@ -20,10 +20,8 @@ module.exports = function (RED) {
     const client = new Client({
       logLevel: config.debug ? 'debug' : 'warn',
       defaultSendOptions: {
-        transport: 'udp',
-        timeout: 30000,
-        useSharedSocket: true,
-        sharedSocketTimeout: 0
+        transport: 'tcp',
+        timeout: this.config.eventInterval || 30000
       }
     })
     const moment = require('moment')
@@ -44,11 +42,14 @@ module.exports = function (RED) {
     // event proxies are setup, and then polling begins.
     node.connectDevice = async function (id) {
       if (!node.devices.has(id)) {
-        console.log('Device needs to be added before connection request')
+        // Device shell/placeholder should be setup prior to calling this function
+        return
       }
+
       let shellDevice = node.devices.get(id)
       if (!shellDevice.placeholder) {
-        console.log('ATTEMPTING TO CONNECT TO DEVICE THAT IS ALREDY CONNECTED?', { id, shellDevice })
+        // This shouldn't ever happen - but just in case
+        node.error('Attempting to connect to device that already has a connection in this node')
         return shellDevice
       }
       shellDevice.connecting = true
@@ -337,8 +338,12 @@ module.exports = function (RED) {
     // an output on the node.
     node.setupEventProxies = function (device) {
       let powerPrefix = device.deviceType == 'bulb' ? 'lightstate' : 'power'
-      device.on(powerPrefix + '-on', () => device.emit('PowerEvents', { powerOn: true, state: true }))
-      device.on(powerPrefix + '-off', () => device.emit('PowerEvents', { powerOn: false, state: false }))
+      device.on(powerPrefix + '-on', () =>
+        device.emit('PowerEvents', { powerOn: true, state: true })
+      )
+      device.on(powerPrefix + '-off', () =>
+        device.emit('PowerEvents', { powerOn: false, state: false })
+      )
       device.on(powerPrefix + '-update', powerOn => {
         device.emit('PowerUpdateEvents', { powerOn, state: powerOn })
         device.emit('InfoEvents') // placed here to take advantage of polling interval
@@ -434,7 +439,7 @@ module.exports = function (RED) {
         status.text = `${numOnline} devices connected`
       }
 
-      if (numOffline > 1) {
+      if (numOffline > 0) {
         status.fill = 'yellow'
         status.text += ` (${numOffline} offline)`
       }
@@ -448,7 +453,7 @@ module.exports = function (RED) {
         placeholder: true,
         queue: []
       })
-      node.newDevice(this.config.deviceId)
+      node.connectDevice(this.config.deviceId)
     } else {
       // Otherwise, initialize status (with no devices)
       node.updateStatus()
