@@ -1,6 +1,6 @@
 {
   "name": "node-red-contrib-tplink",
-  "version": "0.4.3",
+  "version": "1.0.0-alpha.0",
   "description": "A collection of Node-RED nodes for TP-Link smart-home devices.",
   "homepage": "https://github.com/caseyjhol/node-red-contrib-tplink",
   "author": "Dragoiu Robert <dragoiu.robert@gmail.com> (https://facebook.com/dopepixels)",

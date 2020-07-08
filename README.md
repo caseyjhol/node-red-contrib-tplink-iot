@@ -10,13 +10,9 @@ TP-Link Smart Home Node-Red Nodes
 
 [![npm](https://img.shields.io/npm/l/node-red-contrib-tplink.svg?style=flat-square)](https://github.com/caseyjhol/node-red-contrib-tplink/blob/master/LICENSE) [![GitHub contributors](https://img.shields.io/github/contributors/caseyjhol/node-red-contrib-tplink.svg?style=flat-square)](https://github.com/caseyjhol/node-red-contrib-tplink/graphs/contributors) [![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat-square)](https://github.com/Felixls/node-red-contrib-tplink-smarthome/issues)
 
-This is a collection of [Node-RED](https://nodered.org/) nodes that allow you control smart plugs and bulbs from the TP-Link smart home ecosystem.
+This is a [Node-RED](https://nodered.org/) node that allows you to control smart plugs, switches, and bulbs from the TP-Link Kasa Smart ecosystem.
 
-This is a fork of so inspiring [node-red-contrib-tplink-smarthome
-
-](https://github.com/Felixls/node-red-contrib-tplink-smarthome) with added functionality.
-
-Under the hood, each node uses the awesome [TP-Link Smart Home API](https://github.com/plasticrake/tplink-smarthome-api).
+Under the hood, this uses [TP-Link Smart Home API](https://github.com/plasticrake/tplink-smarthome-api).
 
 ## Installation
 
@@ -61,7 +57,8 @@ Control a device by setting its properties.
 	-  `state: true` | `on` | `false` | `off` - Set device on or off
 	-  `brightness: [1-100]` - Set brightness, if supported
 	-  `temperature: [2700-6500]` - Set brightness (in kelvin), if supported
-	-  `hsb: {hue, saturation, brightness}` - Set the color, if supported \*  `led: true` | `false` - Turn the LED on or off, if supported
+	-  `hsb: {hue, saturation, brightness}` - Set the color, if supported
+	-  `led: true` | `false` - Turn the LED on or off, if supported
 
 ### Commands
 
