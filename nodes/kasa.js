@@ -65,7 +65,10 @@ module.exports = function (RED) {
         return device
       } catch (err) {
         shellDevice.connecting = false
-        node.error(`Error connecting to device ${id}: ${err}`)
+        if (node.config.debug) node.error(`Error connecting to device ${id}: ${err}`)
+        // Unable to connect initially. If device is later seen during discovery,
+        // it will use the discovery response to 'connect' and everything will
+        // then work normally.
         return
       }
     }
