@@ -474,13 +474,13 @@ module.exports = function (RED) {
 
     // Cleanup when node destroyed
     node.on('close', function () {
-      // NOTE: We reference node.client.devices here, just in case
-      // there were devices initialized on this client that did not
-      // make it into the node.devices map. This ensures no memory
-      // leaking in case of bugs/errors.
-      node.client.devices.forEach(device => {
-        device.stopPolling()
-        device.closeConnection()
+      // Important: All code in this function must be sure
+      // to not cause any errors. If any error is uncaught,
+      // cleanup may not finish properly and there will
+      // be a memory leak!
+      node.devices.forEach(device => {
+        device.stopPolling && device.stopPolling()
+        device.closeConnection && device.closeConnection()
       })
       node.client.stopDiscovery()
     })
