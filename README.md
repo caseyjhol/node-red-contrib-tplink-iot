@@ -56,7 +56,7 @@ Control a device by setting its properties.
 - Or as an object, all properties optional:
 	-  `state: true` | `on` | `false` | `off` - Set device on or off
 	-  `brightness: [1-100]` - Set brightness, if supported
-	-  `temperature: [2700-6500]` - Set brightness (in kelvin), if supported
+	-  `temperature: [2700-6500, 0]` - Set brightness (in kelvin), or zero to leave temperature mode and return to previous hsb value if supported 
 	-  `hsb: {hue, saturation, brightness}` - Set the color, if supported
 	-  `led: true` | `false` - Turn the LED on or off, if supported
 
