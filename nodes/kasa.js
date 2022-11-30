@@ -202,7 +202,7 @@ module.exports = function (RED) {
         if (
           input.hasOwnProperty('temperature') &&
           device.supportsColorTemperature &&
-          validateNumber('temperature', input.temperature, 2700, 6500)
+          (validateNumber('temperature', input.temperature, 2700, 6500) || input.temperature == 0)
         ) {
           promises.push(device.lighting.setLightState({ color_temp: input.temperature }))
         }
@@ -464,10 +464,10 @@ module.exports = function (RED) {
 
     // Helpers
     function validateNumber(propName, value, min, max) {
-      if ((value >= min && value <= max) || value === undefined) {
+      if (((value >= min && value <= max) || value === undefined) || value == 0) {
         return true
       } else {
-        node.error(`Invalid ${propName} value; Should be between ${min} and ${max}`)
+        node.error(`Invalid ${propName} value; Should be between ${min} and ${max} or 0`)
         return false
       }
     }
